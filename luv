@@ -1,0 +1,438 @@
+1. WORD COUNT 
+val sc=spark.sparkContext
+val rdd=sc.textFile("D:/SPARK AND HIVE DATASETS/Word count.txt")
+val rdd2=rdd.flatMap(f=>f.split(" "))
+val rdd3=rdd2.map(m=>(m,1))
+val rdd4=rdd3.reduceByKey(_+_)
+val rdd5=rdd4.map(a=>(a._2,a._1)).sortByKey()
+rdd5.collect.foreach(println)
+
+
+
+
+
+
+
+
+2. LETTER COUNT:
+
+
+val sc=spark.sparkContext
+val data=sc.textFile("D:/SPARK AND HIVE DATASETS/Word count.txt")
+data.collect
+val splitdata=data.flatMap(line=>line.split(""))
+splitdata.collect
+val mapdata=splitdata.map(word=>(word,1))
+mapdata.collect
+val reducedata=mapdata.reduceByKey(_+_)
+reducedata.collect
+
+
+
+
+
+
+
+
+3. EMPLOYEE SEQUENCE:
+
+val empColumns = Seq("emp_id","name","year_of_exp","dept","address","salary")
+val emp = Seq((1,"renu",4,"Sales","Chennai",50000),
+ (2,"banu",5,"Production","cbe",60000),
+ (3,"meenu",3,"Production","Madurai",45000),
+ (4,"charu",2,"Marketing","Salem",35000),
+ (5,"thanu",6,"Production","Trichy",75000),
+ (6,"riya",2,"Sales","Karur",30000))
+import spark.sqlContext.implicits._
+val empDF = emp.toDF(empColumns:_*)
+empDF.show()
+
+a)
+val df1=empDF.select($"name").filter($"dept"==="Production").show()
+
+b)
+val dojDates = Seq("2023-01-15", "2022-12-10", "2023-03-05", "2023-02-20", "2022-11-30", "2023-04-25", "2022-10-15")
+val empDFWithDOJ = empDF
+.withColumn("row_id", monotonically_increasing_id())
+.join(dojDates.zipWithIndex.toDF("DOJ", "row_id"), "row_id")
+.drop("row_id")
+.show()
+val dfafterremove=empDF.drop("Address").show()
+
+
+c)
+empDF.withColumnRenamed("dept","Dept Name").show()
+
+
+d)
+empDF.filter($"salary">50000).show()
+
+e)
+empDF.select("dept").distinct().show()
+
+f)
+val df2=empDF.withColumn("salary",col("salary")+1000).show()
+val dfafterremove=empDF.drop("address").show()
+
+
+
+
+
+
+
+
+
+4. DATE AND TIME FUNCTION:
+
+a) retrieve current date
+
+import org.apache.spark.sql.functions._
+val df = Seq((1)).toDF("seq")
+val curDate = df.withColumn("current_date",current_date().as("current_date"))
+.withColumn("current_timestamp",current_timestamp().as("current_timestamp"))
+curDate.show(false)
+
+
+B)to get the input date, current date and also the differnce in the days between them
+  
+  import org.apache.spark.sql.functions._
+  Seq(("2019-01-23"),("2019-09-20"))
+  .toDF("input")
+  .select(col("input"),current_date(),
+      datediff(current_date(),col("input")).as("diff"))
+  .show()
+
+
+
+c) to get the input date , current date and the difference in days, months between them
+
+    import org.apache.spark.sql.functions._
+    Seq(("2019-01-23"),("2019-06-24"),("2019-09-20"))
+    .toDF("date")
+    .select(col("date"),current_date(),
+       datediff(current_date(),col("date")).as("diff"),
+       months_between(current_date(),col("date")).as("months_between")
+       ).show()
+
+
+d)to format the current date
+
+
+ import org.apache.spark.sql.functions._
+ Seq(("2019-01-23"))
+ .toDF("input")
+ .select(
+     current_date().as("current_date"),
+     col("input"),
+     date_format(col("input"),"MM-dd-yyyy").as("format")
+     ).show()
+
+
+
+e)to retrieve the  current timestamp
+
+
+ import org.apache.spark.sql.functions._
+ val df=Seq((1)).toDF("seq")
+ val curDate = df.withColumn("current_date",current_date().as("current_date"))
+ val curTime=df.withColumn("current_timestamp",current_timestamp().as("current_timestamp"))
+ curTime.show()
+
+
+
+f)to truncate the months and years
+
+
+import org.apache.spark.sql.functions._
+Seq(("2019-01-23"),("2019-06-24"),("2019-09-20"))
+.toDF("input")
+.select(col("input"),
+     trunc(col("input"),"Month").as("Month_Trunc"),
+     trunc(col("input"),"Year").as("Month_Year"),
+     trunc(col("input"),"Month").as("Month_Trunc")
+     ).show()
+
+
+
+
+g) ADDING, SUBTRACTING DATES AND MONTHS 
+
+.select( col("input"),
+           add_months(col("input"),3).as("add_months"),
+           add_months(col("input"),-3).as("sub_months"),
+           date_add(col("input"),4).as("date_add"),
+           date_sub(col("input"),4).as("date_sub")
+           ).show()
+
+
+
+
+h) to get the day of the week(), day of month,next day,week of the year
+
+
+import org.apache.spark.sql.functions._
+Seq(("2019-01-23"),("2019-06-24"),("2019-09-20"))
+.toDF("input")
+.select(col("input"),year(col("input")).as("year"),
+     month(col("input")).as("month"),
+     daysofweek(col("input")).as("daysofweek"),
+     daysofmonth(col("input")).as("daysofmonth"),
+     daysofyear(col("input")).as("daysofyear"),
+     next_day(col("input","Sunday").as("next_day"),
+     weekofyear(col("input")).as("weekofyear")
+     ).show()
+
+
+
+
+
+
+
+
+
+
+
+
+5. MOVIE DATASET
+
+a)
+     val ipRDD=sc.textFile("C:/Users/HP/Downloads/u.data.txt")
+     val ipRDD1=sc.textFile("C:/Users/HP/Downloads/u.item.txt")
+
+b)
+    val mviDRDD = ipRDD.map(l=> (l.split("\t")(1),l.split("\t")(2)))
+    val mvNameDRDD = ipRDD1.map(l => (l.split("\\|")(0),l.split("\\|")(1)))
+
+c)
+    val fiveStarMv = mviDRDD.filter(m => m._2 == "5")
+    val pairRDD = fiveStarMv.map(t => (t,1)) 
+    val fiveStarTotal = pairRDD.reduceByKey((x,y) => x+y)
+    fiveStarTotal.take(10).foreach(println)
+
+d)
+    val movieIDRDD = fiveStarTotal.sortBy(- _._2) 
+    val movieID = movieIDRDD.map(x =>(x._1._1,x._2)) 
+    movieID.count()
+
+e)
+    val joinRDD = movieID.join(mvNameDRDD) 
+    val RESULTRDD = joinRDD.sortBy(_._2._1).map(m => m._1 + "->" + m._2._2) 
+    RESULTRDD.take(10).foreach(println)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6. JOIN -SCALA
+
+val movies=Seq(
+       ("1","dev","12","8"),
+       ("2","kgf","16","9"),
+       ("3","comali","22","7"),
+       ("4","lisa","24","8"),
+       ("5","coco","30","6"),
+       ("6","june","25","7")).toDF("id","title","release_date","ratings")
+movies.show( )
+val genres=Seq(
+       ("1","romantic"),
+       ("2","action"),
+       ("3","comedy"),
+       ("4","horror"),
+       ("5","comedy"),
+       ("6","comedy")).toDF("id","genre")
+
+
+
+Inner join:
+val moviesgenresInner=movies.join(genres,movies("id")===genres("id"),"inner").show()
+
+Cross join:
+val moviesgenresCross=movies.join(genres).show()
+
+Left outer join:
+val moviesgenresLeft=movies.join(genres,movies("id")===genres("id"),"leftouter").show()
+
+Right outer join:
+val moviesgenresRight=movies.join(genres,movies("id")===genres("id"),"rightouter").show()
+
+Full join:
+val moviesgenresFull=movies.join(genres,movies("id")===genres("id"),"fullouter").show()
+
+Left semi join:
+val moviesgenresLeftSemi=movies.join(genres,movies("id")===genres("id"),"leftsemi").show()
+
+Left anti join:
+val moviesgenresLeftAnti=movies.join(genres,movies("id")===genres("id"),"leftanti").show()
+
+
+
+
+
+
+
+
+7.GROUP BY
+
+val df2 = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true")).csv("‪C:/Users/HP/Downloads/summer olympic medals.csv")
+
+df2.filter($"Medal"==="Silver" ||$"Medal"==="Gold").groupBy($"Country").count().show()
+
+df2.groupBy($"Country",$"Medal",$"Year").count().show()
+
+df2.groupBy($"Country",$"Medal",$"Gender").count().show()
+
+df2.filter($"Gender"==="Women").groupBy($"Country",$"Medal").count().show()
+
+
+
+
+
+
+
+
+8. SQL QUERIES FOR US PRESIDENT DATASET 
+
+val df_pres = spark.read.format("csv").option("header","true").option("inferSchema","true").load("C:/Users/santhanalakshmi/Desktop/Spark/DA LAB III DATASETS/SPARK AND HIVE DATASETS/uspresi.csv")
+****IF ERROR COMES CHANGE THE SLASH IN THE FILE PATH****
+
+
+df_pres.select($"pres_id",$"pres_dob",$"pres_bs").sort($"pes_bs".asc).show()
+
+a) df_pres.show()
+
+b) df_pres.select($"pres_id",$"pres_dob",$"pres_bs").show()
+
+c) df_pres.alias("Presidenttable").select($"pres_id",$"pres_dob".alias("Date Of Birth"),$"pres_bs").show()
+
+d) df_pres.filter($"pres_bs"==="New York").select($"pres_name",$"pres_dob".alias("DateOf Birth"),$"pres_bs").show()
+
+e) df_pres.filter($"pres_bs"==="New York"||$"pres_bs"==="Ohio").select($"pres_name",$"pres_dob".alias("DateOfBirth"),$"pres_bs").show()
+
+f) df_pres.filter($"pres_bs"==="New York" && $"pres_dob"> "1850-01-01").select($"pres_name",$"pres_dob".alias("Date Of Birth"),$"pres_bs").show()
+
+g) df_pres.filter($"pres_name".like("James%")).select($"pres_name",$"pres_dob").show()
+
+   df_pres.filter(!$"pres_name".like("James%")).select($"pres_name",$"pres_dob",$"pres_bs").show() 
+
+h) df_pres.select($"pres_id",$"pres_dob",$"pres_bs").sort($"pres_bs".asc).show()
+
+
+
+
+
+
+9. RANK AND PERCENTAGE OF STUDENTS :
+
+
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions.rank
+import org.apache.spark.sql.functions._
+val studData=Seq((20001,"Akshara",462,"CS"),
+(20002,"Bala",467,"BIO"),
+(20003,"Hepzi",450,"CHE"),
+(20004,"Jasmine",432,"CS"),
+(20005,"Vaishali",498,"CS"))
+val df=studData.toDF("Stu_ID","Stu_Name","Mark","Dept")
+df.show()
+val windowSpec=Window.partitionBy("Dept").orderBy("Stu_ID")
+df.withColumn("row_number",row_number.over(windowSpec)).show()
+df.withColumn("rank",rank().over(windowSpec)).show()
+df.withColumn("percent_rank",percent_rank().over(windowSpec)).show()
+
+
+
+
+
+
+
+
+10. SCALA PROGRAM FOR BROADCAST 
+
+val states = Map(("NY","NEWYORK"),("CA","CALIFORNIA"),("FL","FLORIDA"))
+val countries = Map(("USA","UNITED STATES OF AMERICA"),("IN","INDIA"))
+val broadcaststates = spark.sparkContext.broadcast(states)
+val broadcastcountries = spark.sparkContext.broadcast(countries)
+val data = Seq(("JAMES","SMITH","USA","CA"),
+("MICHAEL","ROSE","USA","NY"),
+("ROBERT","WILLIAMS","USA","CA"),
+("MARIA","JONES","USA","FL"))
+
+val columns = Seq("firstname","lastname","country","state")
+import spark.sqlContext.implicits._
+val df = data.toDF(columns:_*)
+val df2 = df.map(row=>{
+   val country = row.getString(2)
+   val state = row.getString(3)
+   val fullcountry = broadcastcountries.value.get(country).get
+   val fullstate = broadcaststates.value.get(state).get
+   (row.getString(0),row.getString(1),fullcountry,fullstate)})
+.toDF(columns:_*)
+df2.show(false)
+
+
+
+
+
+
+
+11. SPARK STREAMING
+
+To get Daemons
+cd hadoop-2.9.1
+bin/hadoop namenode -format
+sbin/start -all.sh
+jps
+
+
+Datanode(wont get)
+Go to files 
+Click Hadoop(dir)--->delete datanode
+Come terminal
+sbin/hadoop-daemon.sh start datanode
+jps
+
+open new terminal after startng all daemons
+
+cd
+
+cd apache-hive-2.3.5-bin
+
+bin/hive
+
+
+NEW TERMINAL
+
+install netcat
+sudo apt-get install netcat -y 
+
+nc -lk 9999 
+INPUT IN THIS TERMINAL
+
+
+SPARK SHELL
+cd spark
+bin/spark-shell
+
+import org.apache.spark._
+import org.apache.spark.streaming._
+import org.apache.spark.streaming.StreamingContext._ 
+val conf = new SparkConf().setMaster("local[2]").setAppName("NetworkWordCount")
+sc.stop
+val ssc = new StreamingContext(conf, Seconds(1))
+val lines = ssc.socketTextStream("localhost", 9999)
+val words = lines.flatMap(_.split(" "))
+import org.apache.spark.streaming.StreamingContext._
+val pairs = words.map(word => (word, 1))
+val wordCounts = pairs.reduceByKey(_ + _)
+wordCounts.print()
+ssc.start()    	
+ssc.awaitTermination()
